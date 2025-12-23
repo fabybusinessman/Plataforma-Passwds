@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Contraseñas Predefinidas</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: auto;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .password-section {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        textarea {
+            width: calc(100% - 22px); /* Ajuste para padding y borde */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace; /* Para que las contraseñas se vean alineadas */
+            resize: none; /* Evitar que el usuario cambie el tamaño */
+            background-color: #e9ecef; /* Indicar que es solo lectura */
+        }
+        .copy-button {
+            background-color: #28a745;
+        }
+        .copy-button:hover {
+            background-color: #218838;
+        }
+        .output-area {
+            display: flex;
+            align-items: center; /* Centrar verticalmente textarea y botón */
+            gap: 10px; /* Espacio entre textarea y botón */
+        }
+        .output-area textarea {
+             flex-grow: 1; /* Permitir que el textarea ocupe el espacio disponible */
+             margin-bottom: 0; /* Quitar margen inferior para alinear con botón */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Generador de Contraseñas</h1>
+
+    <label for="fullNameInput">Ingrese Nombre y Apellido:</label>
+    <input type="text" id="fullNameInput" placeholder="Ej: Juan Perez">
+
+    <button onclick="generatePasswords()">Generar Contraseñas</button>
+
+    <div id="results">
+        <div class="password-section">
+            <h2>Active Directory</h2>
+            <div class="output-area">
+                <textarea id="adPasswordOutput" rows="1" readonly></textarea>
+                <button class="copy-button" onclick="copyPassword('adPasswordOutput', this)">Copiar</button>
+            </div>
+        </div>
+
+        <div class="password-section">
+            <h2>Google</h2>
+             <div class="output-area">
+                <textarea id="googlePasswordOutput" rows="1" readonly></textarea>
+                <button class="copy-button" onclick="copyPassword('googlePasswordOutput', this)">Copiar</button>
+             </div>
+        </div>
+
+        <div class="password-section">
+            <h2>Sphinx</h2>
+            <div class="output-area">
+                <textarea id="sphinxPasswordOutput" rows="1" readonly></textarea>
+                <button class="copy-button" onclick="copyPassword('sphinxPasswordOutput', this)">Copiar</button>
+            </div>
+        </div>
+
+        <div class="password-section">
+            <h2>SAP</h2>
+             <div class="output-area">
+                <textarea id="sapPasswordOutput" rows="1" readonly></textarea>
+                <button class="copy-button" onclick="copyPassword('sapPasswordOutput', this)">Copiar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Función para obtener las iniciales
+    function getInitials(fullName) {
+        if (!fullName || typeof fullName !== 'string') {
+            return 'XX'; // Valor por defecto si no hay nombre o no es texto
+        }
+        const names = fullName.trim().split(' ').filter(Boolean); // Elimina espacios extra y vacíos
+        if (names.length === 0) {
+            return 'XX'; // Valor por defecto si no hay partes de nombre
+        }
+        const firstNameInitial = names[0][0] || 'X';
+        // Tomar la inicial del último apellido si hay más de un nombre/apellido
+        const lastNameInitial = names.length > 1 ? (names[names.length - 1][0] || 'X') : (firstNameInitial); // Si solo hay una palabra, repetir inicial
+
+        return (firstNameInitial + lastNameInitial).toUpperCase();
+    }
+
+    // Función para generar 2 letras mayúsculas al azar diferentes a las iniciales dadas
+    function getRandomLetters(excludeInitials) {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let randomLetters = '';
+        let attempts = 0; // Para evitar bucles infinitos si algo sale mal
+
+        while (randomLetters.length < 2 && attempts < 100) {
+            const letter1 = alphabet[Math.floor(Math.random() * alphabet.length)];
+            const letter2 = alphabet[Math.floor(Math.random() * alphabet.length)];
+
+            // Asegurarse de que las letras sean diferentes entre sí Y
+            // que el par generado sea diferente a las iniciales excluidas
+            if (letter1 !== letter2) {
+                 const generatedPair = letter1 + letter2;
+                 if (generatedPair !== excludeInitials) {
+                      randomLetters = generatedPair;
+                 }
+            }
+            attempts++;
+        }
+         // Si después de 100 intentos no se pudo, devolver algo por defecto
+        if (randomLetters.length < 2) {
+            // Generar algo diferente a 'XX' si es posible
+            return excludeInitials === 'AB' ? 'CD' : 'AB';
+        }
+
+        return randomLetters;
+    }
+
+    // Función principal para generar las contraseñas
+    function generatePasswords() {
+        const fullName = document.getElementById('fullNameInput').value;
+        if (!fullName.trim()) {
+            alert("Por favor, ingrese un nombre y apellido.");
+            return;
+        }
+
+        const initials = getInitials(fullName);
+        const randomSphinxLetters = getRandomLetters(initials);
+
+        // Plantilla base (recuerda que el año 2025 está fijo según el ejemplo)
+        const prefix = "Pcf#";
+        const suffixBase = "#2025.,"; // Año fijo como en el ejemplo
+
+        // Generar contraseñas
+        const adPassword = prefix + initials + suffixBase + "AD";
+        const googlePassword = prefix + initials + suffixBase + "GL";
+        const sphinxPassword = prefix + randomSphinxLetters + suffixBase + "SN";
+        const sapPassword = prefix + initials + suffixBase + "SP";
+
+        // Mostrar contraseñas en los textareas
+        document.getElementById('adPasswordOutput').value = adPassword;
+        document.getElementById('googlePasswordOutput').value = googlePassword;
+        document.getElementById('sphinxPasswordOutput').value = sphinxPassword;
+        document.getElementById('sapPasswordOutput').value = sapPassword;
+
+        // Resetear texto de botones de copiar por si se usaron antes
+        const buttons = document.querySelectorAll('.copy-button');
+        buttons.forEach(button => button.textContent = 'Copiar');
+
+    }
+
+    // Función para copiar el texto de un textarea
+    function copyPassword(textareaId, buttonElement) {
+        const textarea = document.getElementById(textareaId);
+        if (!textarea.value) return; // No hacer nada si está vacío
+
+        textarea.select(); // Seleccionar el texto
+        textarea.setSelectionRange(0, 99999); // Para compatibilidad con móviles
+
+        try {
+            // Intentar usar la API del portapapeles moderna
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                // Éxito
+                buttonElement.textContent = '¡Copiado!';
+                // Resetear texto del botón después de un tiempo
+                setTimeout(() => {
+                     buttonElement.textContent = 'Copiar';
+                }, 2000); // 2 segundos
+            }).catch(err => {
+                console.error('Error al copiar con API moderna: ', err);
+                // Fallback por si falla la API moderna (aunque en local puede dar problemas)
+                fallbackCopyTextToClipboard(textarea.value, buttonElement);
+            });
+        } catch (err) {
+            console.error('Error al intentar copiar: ', err);
+            // Fallback si navigator.clipboard no está disponible
+             fallbackCopyTextToClipboard(textarea.value, buttonElement);
+        }
+    }
+
+    // Función de fallback para copiar (menos fiable, puede requerir permisos)
+    function fallbackCopyTextToClipboard(text, buttonElement) {
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                 buttonElement.textContent = '¡Copiado!';
+                 setTimeout(() => {
+                    buttonElement.textContent = 'Copiar';
+                 }, 2000);
+            } else {
+                alert('No se pudo copiar la contraseña automáticamente. Por favor, cópiela manualmente.');
+                 buttonElement.textContent = 'Error';
+            }
+        } catch (err) {
+             alert('Error al copiar. Por favor, cópiela manualmente.');
+             buttonElement.textContent = 'Error';
+             console.error('Error de fallback al copiar: ', err);
+        }
+    }
+
+</script>
+
+</body>
+</html>
